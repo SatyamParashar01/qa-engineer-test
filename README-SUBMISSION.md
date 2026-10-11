@@ -25,10 +25,11 @@ Here is my submission for the EU Pay QA Engineer technical test. I went through 
    - All tests pass when running `npm test`.
 
 3. **Documentation:**
-   - `bug-reports.md`: Steps to reproduce each bug, root cause, and impact.
-   - `fixes.md`: Explanation and code diffs for all fixes.
-   - `test-plan.md`: Test plan for the webhook payment flow.
-
+   - `bug-reports.md`: Details and steps to reproduce each bug.
+   - `fixes.md`: Explanation and code changes for each fix.
+   - `test-plan.md`: Testing approach for webhooks including edge cases and security.
+   - `src/routes/`: Fixed production code for Payments, Auth, Webhooks, Table Orders, and E-Invoice.
+   - `src/routes/__tests__/`: 16 automated tests across 5 test suites.
 ---
 
 ## How to Verify Locally
