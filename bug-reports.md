@@ -1,6 +1,6 @@
 # Bug Reports - EU Pay QA Assessment
 
-Comprehensive technical documentation of the 7 intentional bugs identified, reproduced, and analyzed in the EU Pay QA Test API.
+Here is my  bug reports for all 7 bugs found during testing.
 
 ---
 
@@ -37,7 +37,7 @@ The `amount` field was explicitly converted into a string:
 ```
 
 ### Impact:
-Downstream client applications (mobile Flutter app, web checkout UI, accounting services) performing financial calculations directly on `amount` can encounter `NaN`, string concatenation bugs (`"25.5" + 10 = "25.510"`), and data contract validation errors.
+Web and mobile apps doing math on payment amounts will run into bugs like string concatenation (`"25.5" + 5 = "25.55"`) or NaN errors.
 
 ### Root Cause:
 In `src/routes/payment.routes.js`, lines 16 and 52 both explicitly invoked `.toString()` on the numeric amount:
@@ -150,7 +150,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 The webhook endpoint must verify the incoming `x-webhook-signature` using HMAC-SHA256 with the shared secret `WEBHOOK_SECRET`. Unsigned or mismatched signatures must return HTTP `401 Unauthorized`.
 
 ### Actual Behavior:
-The endpoint completely bypassed signature verification (the verification logic was commented out), accepting any arbitrary status update from untrusted external parties.
+The signature check was completely commented out, allowing anyone to change payment statuses.
 
 ### Impact:
 **Critical security vulnerability.** Any attacker on the internet can spoof payment confirmations, mark unpaid orders as `completed`, or issue fraudulent refunds by injecting fake webhook requests without authorization.
@@ -195,13 +195,13 @@ if (signature !== expectedSignature) {
 3. Send the exact same request a second time with the identical `event_id`.
 
 ### Expected Behavior:
-The webhook handler must be idempotent. Upon receiving a duplicate `event_id`, it should identify that the event was already processed, avoid redundant mutations, and return an idempotent `200 OK` (`Already processed`).
+The API should detect that this `event_id` was already processed and return 200 OK with an "Already processed" message without re-processing.
 
 ### Actual Behavior:
-Every identical webhook request re-executes payment status mutation, overwriting `webhook_received_at` timestamp and processing duplicate events without tracking `event_id`.
+Every duplicate request re-updates the payment and timestamp again.
 
 ### Impact:
-Network retries from payment service providers (e.g. Stripe, Powens) can trigger duplicate inventory adjustments, duplicate receipts, duplicate accounting ledger records, and race conditions.
+Network retries from payment service providers (e.g. Stripe, Powens) can trigger duplicate inventory adjustments, duplicate receipts, duplicate accounting ledger records.
 
 ### Root Cause:
 `db.processed_webhooks` check and push logic were commented out.
@@ -292,7 +292,7 @@ Invoices already in `submitted` or `accepted` state must not be re-submitted to 
 The API re-submits the invoice, generating a new `submission_id` and updating the submission timestamp repeatedly.
 
 ### Impact:
-Duplicate tax filing in French/EU PDP systems (e.g. Seqino/Chorus Pro), resulting in rejection by tax authorities, double VAT accounting liability, and compliance penalties.
+Submitting duplicate invoices to European tax authorities creates invalid audit trails and potential tax penalties.
 
 ### Root Cause:
 Status validation check on `invoice.einvoice_status` was commented out.
